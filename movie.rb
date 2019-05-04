@@ -1,5 +1,4 @@
 file_name = ARGV[0]
-movies_base = []
 
 if file_name.nil?
   @file_true = 'movies.txt'
@@ -10,6 +9,7 @@ else
   exit!
 end
 
+movies_base = []
 File.open(@file_true).each { |line| movies_base.push(line) }
 
 movies = []
