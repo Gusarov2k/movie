@@ -6,7 +6,7 @@ if file_name.nil?
 elsif File.file? file_name
   @file_true = file_name
 else
-  puts 'Your file don\'t find try to again'
+  abort 'Your file don\'t find try to again'
   exit!
 end
 
