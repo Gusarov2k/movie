@@ -6,7 +6,6 @@ elsif File.file? file_name
   @file_true = file_name
 else
   abort 'Your file don\'t find try to again'
-  exit!
 end
 
 movies_base = []
