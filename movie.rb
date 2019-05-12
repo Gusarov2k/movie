@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 input_arg = ARGV[0]
 
 if input_arg.nil?
@@ -13,6 +15,40 @@ File.open(file_name).each { |line| movies_base.push(line) }
 
 movies = movies_base.map { |item| item.split('|') }
 
-movies.each do |col|
-  puts "#{col[1]} - #{'*' * ((col[7].to_f - 8).ceil(1) / 0.1).ceil(1).to_i}" if col[1].include? 'Max'
+keys = %i[link
+          original_title
+          year
+          country
+          release_date
+          genres
+          runtime
+          popularity
+          film_director
+          stars]
+
+movies.map! { |row| keys.zip(row).to_h }
+
+def films_review(movies, title)
+  puts "#{title}:"
+  movies.each do |movie|
+    puts "#{movie[:original_title]} (#{movie[:release_date]};" \
+         "#{movie[:genres]}) - #{movie[:runtime]}"
+  end
+  puts '*' * 70
 end
+
+max_runtime = movies.sort_by { |movie| movie[:runtime].to_i }
+films_review(max_runtime.last(5), '5 films with max runtime')
+
+film_release_date = movies.sort_by { |movie| movie[:release_date].split('-') }
+comedy = []
+film_release_date.each { |movie| comedy.push(movie) if movie[:genres].include?('Comedy') }
+films_review(comedy.first(10), '10 first comedy to ASC')
+
+directors = (movies.sort_by do |movie|
+               movie[:film_director].split.last
+             end).uniq { |movie| movie[:film_director] }
+
+directors.each { |movie| puts movie[:film_director] }
+
+puts "#{movies.select { |movie| movie[:country].include?('USA') }.count} movies not made in USA"
