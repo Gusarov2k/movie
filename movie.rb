@@ -1,19 +1,17 @@
 # frozen_string_literal: true
+require 'csv'
 
-input_arg = ARGV[0]
+input_arg = ARGV[1]
 
 if input_arg.nil?
-  file_name = 'movies.txt'
+  file_name = 'movies.csv'
 elsif File.file? input_arg
   file_name = input_arg
 else
   abort 'Your file don\'t find try to again'
 end
 
-movies_base = []
-File.open(file_name).each { |line| movies_base.push(line) }
-
-movies = movies_base.map { |item| item.split('|') }
+movies = CSV.read(file_name, col_sep: '|')
 
 keys = %i[link
           original_title
@@ -27,7 +25,7 @@ keys = %i[link
           stars]
 
 movies.map! { |row| keys.zip(row).to_h }
-
+binding.pry
 def films_review(movies, title)
   puts "#{title}:"
   movies.each do |movie|
