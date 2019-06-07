@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 require 'csv'
+require 'ostruct'
 
 input_arg = ARGV[1]
 
@@ -25,6 +26,8 @@ keys = %i[link
           stars]
 
 movies.map! { |row| keys.zip(row).to_h }
+
+date = OpenStruct.new(film: movies)
 binding.pry
 def films_review(movies, title)
   puts "#{title}:"
