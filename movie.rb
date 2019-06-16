@@ -1,54 +1,43 @@
 # frozen_string_literal: true
 
-input_arg = ARGV[0]
+require 'date'
 
-if input_arg.nil?
-  file_name = 'movies.txt'
-elsif File.file? input_arg
-  file_name = input_arg
-else
-  abort 'Your file don\'t find try to again'
-end
+class Movie
+  attr_accessor :link, :original_title, :year, :country, :release_date, :genres, :runtime, :popularity, :film_director,
+                :stars
 
-movies_base = []
-File.open(file_name).each { |line| movies_base.push(line) }
-
-movies = movies_base.map { |item| item.split('|') }
-
-keys = %i[link
-          original_title
-          year
-          country
-          release_date
-          genres
-          runtime
-          popularity
-          film_director
-          stars]
-
-movies.map! { |row| keys.zip(row).to_h }
-
-def films_review(movies, title)
-  puts "#{title}:"
-  movies.each do |movie|
-    puts "#{movie[:original_title]} (#{movie[:release_date]};" \
-         "#{movie[:genres]}) - #{movie[:runtime]}"
+  def initialize(collection, link:, original_title:, year:, country:, release_date:, genres:, runtime:,
+                 popularity:, film_director:, stars:)
+    @link = link
+    @original_title = original_title
+    @year = year.to_i
+    @country = country
+    @release_date = if release_date.is_a? Date
+                      release_date
+                    elsif release_date.is_a? String
+                      Date.parse(release_date + '-01')
+                    elsif release_date.is_a? Integer
+                      Date.new(release_date)
+                    end
+    @genres = genres.split(',')
+    @runtime = runtime.to_i
+    @popularity = popularity.to_f
+    @film_director = film_director
+    @stars = stars.split(',')
+    @all_movies = collection
   end
-  puts '*' * 70
+
+  def genre?(param)
+    raise 'genre not find' unless @all_movies.genre_exist?(param)
+
+    genres.include?(param)
+  end
+
+  def match_filter?(name, value)
+    if send(name).is_a?(Array)
+      send(name).any? { |i| value === i }
+    else
+      value === send(name)
+    end
+  end
 end
-
-max_runtime = movies.sort_by { |movie| movie[:runtime].to_i }
-films_review(max_runtime.last(5), '5 films with max runtime')
-
-film_release_date = movies.sort_by { |movie| movie[:release_date].split('-') }
-comedy = []
-film_release_date.each { |movie| comedy.push(movie) if movie[:genres].include?('Comedy') }
-films_review(comedy.first(10), '10 first comedy to ASC')
-
-directors = (movies.sort_by do |movie|
-               movie[:film_director].split.last
-             end).uniq { |movie| movie[:film_director] }
-
-directors.each { |movie| puts movie[:film_director] }
-
-puts "#{movies.select { |movie| movie[:country].include?('USA') }.count} movies not made in USA"
