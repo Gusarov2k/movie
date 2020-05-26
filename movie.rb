@@ -7,7 +7,7 @@ require 'ostruct'
 input_arg = ARGV[1]
 
 if input_arg.nil?
-  file_name = 'movies.csv'
+  file_name = 'movies.txt'
 elsif File.file? input_arg
   file_name = input_arg
 else
@@ -27,32 +27,31 @@ keys = %i[link
 
 base_movies = CSV.read(file_name, col_sep: '|', converters: %i[date integer float])
 
-base_movies.map! { |row| keys.zip(row).to_h }
-
-base = OpenStruct.new(movies: base_movies)
+base_movies.map! { |row| OpenStruct.new(keys.zip(row).to_h) }
 
 def films_review(movies, title)
   puts "#{title}:"
   movies.each do |movie|
-    puts "#{movie[:original_title]} (#{movie[:release_date].strftime('%d - %B - %Y')} " \
-         "#{movie[:genres]}) - #{movie[:runtime]}"
+    puts "#{movie.original_title} (#{movie.release_date.strftime('%d - %B - %Y')} " \
+         "#{movie.genres}) - #{movie.runtime}"
   end
   puts '*' * 70
 end
 
-max_runtime = base.movies.sort_by { |movie| movie[:runtime].to_i }
+max_runtime = base_movies.sort_by { |movie| movie.runtime.to_i }
+
 films_review(max_runtime.last(5), '5 films with max runtime')
 
-# binding.pry
-fils = base.movies.sort_by { |movie| movie[:release_date].to_i if movie[:release_date].eql? Date }
+films = []
+base_movies.each { |movie| films.push(movie) if movie.release_date.is_a? Date }
+films = films.sort_by(&:release_date)
+
 comedy = []
-fils.each { |movie| comedy.push(movie) if movie[:genres].include?('Comedy') }
+films.each { |movie| comedy.push(movie) if movie.genres.include?('Comedy') }
 films_review(comedy.first(10), '10 first comedy to ASC')
 
-directors = (base.movies.sort_by do |movie|
-               movie[:film_director].split.last
-             end).uniq { |movie| movie[:film_director] }
+directors = base_movies.sort_by { |movie| movie.film_director.split.last }.uniq(&:film_director)
 
-directors.each { |movie| puts movie[:film_director] }
+directors.each { |movie| puts movie.film_director }
 
-puts "#{base.movies.select { |movie| movie[:country].include?('USA') }.count} movies not made in USA"
+puts "#{base_movies.select { |movie| movie.country.include?('USA') }.count} movies not made in USA"
