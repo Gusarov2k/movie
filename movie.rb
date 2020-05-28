@@ -1,6 +1,10 @@
 # frozen_string_literal: true
 
-input_arg = ARGV[0]
+require 'date'
+require 'csv'
+require 'ostruct'
+
+input_arg = ARGV[1]
 
 if input_arg.nil?
   file_name = 'movies.txt'
@@ -10,45 +14,38 @@ else
   abort 'Your file don\'t find try to again'
 end
 
-movies_base = []
-File.open(file_name).each { |line| movies_base.push(line) }
-
-movies = movies_base.map { |item| item.split('|') }
-
-keys = %i[link
-          original_title
-          year
-          country
-          release_date
-          genres
-          runtime
-          popularity
-          film_director
-          stars]
-
-movies.map! { |row| keys.zip(row).to_h }
+base_movies = CSV.read(file_name, col_sep: '|',
+                                  headers: %i[link original_title year country release_date
+                                              genres runtime popularity film_director stars],
+                                  converters: %i[date integer float])
+                 .map { |row| OpenStruct.new(row.to_hash) }
 
 def films_review(movies, title)
   puts "#{title}:"
   movies.each do |movie|
-    puts "#{movie[:original_title]} (#{movie[:release_date]};" \
-         "#{movie[:genres]}) - #{movie[:runtime]}"
+    puts "#{movie.original_title} (#{movie.release_date.strftime('%d - %B - %Y')} " \
+         "#{movie.genres}) - #{movie.runtime}"
   end
   puts '*' * 70
 end
 
-max_runtime = movies.sort_by { |movie| movie[:runtime].to_i }
+max_runtime = base_movies.sort_by { |movie| movie.runtime.to_i }
+
 films_review(max_runtime.last(5), '5 films with max runtime')
 
-film_release_date = movies.sort_by { |movie| movie[:release_date].split('-') }
-comedy = []
-film_release_date.each { |movie| comedy.push(movie) if movie[:genres].include?('Comedy') }
+films = base_movies.select { |movie| movie.release_date.is_a? Date }
+films = films.sort_by(&:release_date)
+
+comedy = films.select { |movie| movie.genres.include?('Comedy') }
 films_review(comedy.first(10), '10 first comedy to ASC')
 
-directors = (movies.sort_by do |movie|
-               movie[:film_director].split.last
-             end).uniq { |movie| movie[:film_director] }
+directors = base_movies.map(&:film_director).uniq.sort_by { |name| name.split.last }
 
-directors.each { |movie| puts movie[:film_director] }
+puts directors
 
-puts "#{movies.select { |movie| movie[:country].include?('USA') }.count} movies not made in USA"
+puts "#{base_movies.count { |movie| movie.country.include?('USA') }} movies not made in USA"
+
+month_statistic = films.group_by { |movie| movie.release_date.strftime('%B').to_sym }.transform_values(&:count)
+                       .sort_by(&:last)
+
+month_statistic.each { |month, key| puts "#{month} - #{key}" }
